@@ -1,17 +1,17 @@
 import { prisma } from "../../server";
 
-export const registerProduct = async (
+export const registerProductService = async (
   name: string,
   category: string,
-  price: number,
-  validity: Date | null
+  pricePurchase: number,
+  priceSale: number
 ) => {
   await prisma.product.create({
     data: {
       name,
       category,
-      price,
-      validity,
+      pricePurchase,
+      priceSale,
     },
   });
 };

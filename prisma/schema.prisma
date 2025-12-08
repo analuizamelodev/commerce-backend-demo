@@ -1,6 +1,6 @@
 generator client {
-  provider   = "prisma-client"
-  output     = "./generated"
+  provider = "prisma-client"
+  output   = "./generated"
 }
 
 datasource db {
@@ -8,36 +8,41 @@ datasource db {
 }
 
 model User {
-  id        String  @id @default(uuid())
-  name      String
-  email     String  @unique
-  password  String
+  id       String @id @default(uuid())
+  name     String
+  email    String @unique
+  password String
 }
 
 model Product {
-  id          String    @id @default(uuid())
-  name        String
-  category    String
+  id            String                   @id @default(uuid())
+  name          String
+  category      String
   pricePurchase Float
-  priceSale  Float
-  validity    DateTime?
-  stock     Stock?
+  priceSale     Float
+  quantity      Int
+  transactions  ProductsOnTransactions[]
 }
 
-model Stock {
-  id         String                @id @default(uuid())
-  quantity   Int                   @default(0)
-  productId  String                @unique
-  product    Product               @relation(fields: [productId], references: [id])
-  movements  StockMovement[]
+enum TransactionType {
+  purchase
+  sale
 }
 
-model StockMovement {
-  id         String   @id @default(uuid())
-  type       String // COMPRA | VENDA | AJUSTE
-  quantity   Int
-  date       DateTime @default(now())
-  productId  String
-  stockId  String
-  stock    Stock  @relation(fields: [stockId], references: [id])
+model Transaction {
+  id       String                   @id @default(uuid())
+  type     TransactionType
+  date     DateTime                 @default(now())
+  products ProductsOnTransactions[]
+}
+
+model ProductsOnTransactions {
+  id            String      @id @default(uuid())
+  product       Product     @relation(fields: [productId], references: [id])
+  productId     String
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  transactionId String
+  quantity      Int
+  unitPrice     Float
+  totalPrice    Float
 }

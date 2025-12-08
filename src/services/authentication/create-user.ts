@@ -1,6 +1,6 @@
 import { prisma } from "../../server";
 
-export const createUser = async (
+export const createUserService = async (
   name: string,
   email: string,
   password: string
