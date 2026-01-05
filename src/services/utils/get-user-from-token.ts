@@ -1,5 +1,5 @@
 import { Request } from "express";
-import { validateToken } from "../auth/validate-token";
+import { validateToken } from "../authentication/auth/validate-token";
 
 export const getUserFromToken = (req: Request) => {
   const authHeader = req.headers.authorization;

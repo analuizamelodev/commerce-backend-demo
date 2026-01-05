@@ -1,17 +1,11 @@
 import { Request, Response } from "express";
 import { registerProductService } from "../../services/product/register-product";
-import { getUserFromToken } from "../../services/utils/get-user-from-token";
 
 export const registerProductController = async (
   req: Request,
   res: Response
 ) => {
   try {
-    const { valid, user, error } = getUserFromToken(req);
-
-    if (!valid || !user) {
-      return res.status(401).json({ error: error || "Unauthorized access" });
-    }
     const { name, category, pricePurchase, priceSale } = req.body;
 
     await registerProductService(name, category, pricePurchase, priceSale);

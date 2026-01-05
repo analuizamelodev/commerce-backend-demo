@@ -12,6 +12,7 @@ export const registerProductService = async (
       category,
       pricePurchase,
       priceSale,
+      quantity: 0,
     },
   });
 };

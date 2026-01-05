@@ -1,52 +1,64 @@
 import { prisma } from "../../server";
+import { z } from "zod";
 
 type TransactionType = "purchase" | "sale";
 
-interface ProductInput {
-  productId: string;
-  quantity: number;
-  unitPrice: number;
-}
+const productInputSchema = z.object({
+  productId: z.coerce.number().int().positive(),
+  quantity: z.coerce.number().int().positive(),
+  unitPrice: z.coerce.number().positive(),
+});
+
+type ProductInput = z.infer<typeof productInputSchema>;
 
 export const createTransactionService = async (
   type: TransactionType,
   products: ProductInput[]
 ) => {
-  const transaction = await prisma.transaction.create({
-    data: { type },
-  });
-
-  const items = [];
-
-  for (const item of products) {
-    const { productId, quantity, unitPrice } = item;
-
-    const totalPrice = quantity * unitPrice;
-
-    if (type === "sale") {
-      await prisma.product.update({
-        where: { id: productId },
-        data: { quantity: { decrement: quantity } },
-      });
-    } else if (type === "purchase") {
-      await prisma.product.update({
-        where: { id: productId },
-        data: { quantity: { increment: quantity } },
-      });
-    }
-
-    const productOnTransaction = await prisma.productsOnTransactions.create({
-      data: {
-        productId,
-        transactionId: transaction.id,
-        quantity,
-        unitPrice,
-        totalPrice,
-      },
+  return await prisma.$transaction(async (tx) => {
+    const transaction = await tx.transaction.create({
+      data: { type },
     });
 
-    items.push(productOnTransaction);
-  }
+    const items = [];
 
-  return { transaction, items };
+    for (const item of products) {
+      const { productId, quantity, unitPrice } = productInputSchema.parse(item);
+
+      const totalPrice = quantity * unitPrice;
+
+      // Atualiza estoque
+      if (type === "sale") {
+        await tx.product.update({
+          where: { id: productId },
+          data: { quantity: { decrement: quantity } },
+        });
+      }
+
+      if (type === "purchase") {
+        await tx.product.update({
+          where: { id: productId },
+          data: { quantity: { increment: quantity } },
+        });
+      }
+
+      const productOnTransaction = await tx.productsOnTransactions.create({
+        data: {
+          product: {
+            connect: { id: productId },
+          },
+          transaction: {
+            connect: { id: transaction.id },
+          },
+          quantity,
+          unitPrice,
+          totalPrice,
+        },
+      });
+
+      items.push(productOnTransaction);
+    }
+
+    return { transaction, items };
+  });
 };
